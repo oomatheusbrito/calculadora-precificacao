@@ -377,6 +377,19 @@ body{background:#09090b;color:#fafafa;font-family:'Inter',sans-serif;min-height:
       </div>
     </div>
 
+    <div id="diaria_wrap" style="display:none">
+      <div class="div"><div class="div-line"></div><div class="div-lbl">Cobertura / Diária</div><div class="div-line"></div></div>
+      <div class="row2">
+        <div class="field">
+          <label>Valor da diária (R$)<span class="info-i">?<span>Valor cobrado por dia de trabalho no local.</span></span></label>
+          <div class="money-wrap"><input id="f_diaria" type="number" min="0" value="0" placeholder="ex: 800"></div>
+        </div>
+        <div class="field">
+          <label>Número de diárias</label>
+          <input id="f_n_diarias" type="number" min="1" value="1" placeholder="1">
+        </div>
+      </div>
+    </div>
     <div class="tog" id="tog_audio" onclick="togItem('audio')">
       <div class="tog-info">Haverá captação de áudio (falas/entrevistas)<small>Informativo — saber se é necessário mic dedicado ou lavalier. Não altera o preço diretamente.</small></div>
       <div class="sw"></div>
@@ -1344,7 +1357,26 @@ function doPrint(){
     .cond-item:last-child{border:none}
     .cond-item strong{color:#555}
     .pay-box{background:#fffbf4;border-color:#e8d5b0}
-    </style></head><body>${conteudo}</body></html>`);
+    </style></head><body>${conteudo}<script>
+(function(){
+  // Show/hide diaria_wrap ao clicar no pilar
+  document.addEventListener('click',function(e){
+    const pill=e.target.closest('.pill[data-v]');
+    if(!pill)return;
+    if(['branding','conteudo','performance','diaria'].includes(pill.dataset.v)){
+      const dw=document.getElementById('diaria_wrap');
+      if(dw)dw.style.display=(pill.dataset.v==='diaria')?'block':'none';
+    }
+  },true);
+  // Patch readAll para capturar f_diaria e f_n_diarias
+  const _ra=window.readAll;
+  if(_ra)window.readAll=function(){_ra();if(window.D){const fd=document.getElementById('f_diaria');const fn=document.getElementById('f_n_diarias');D.diaria=fd?parseFloat(fd.value)||0:0;D.n_diarias=fn?parseFloat(fn.value)||1:1;}};
+  // Patch calc para usar custo diária quando definido
+  const _calc=window.calc;
+  if(_calc)window.calc=function(){const r=_calc();if(window.D&&D.diaria>0){const dc=D.diaria*(D.n_diarias||1);const aliq=(D.aliq||0)/100;r.cServico=dc;r.bruto=aliq>0?dc/(1-aliq):dc;r.total=r.bruto+r.cLogis+r.cFree+r.cDrone;}return r;};
+})();
+</script>
+</body></html>`);
   win.document.close();
   setTimeout(()=>win.print(),600);
 }
