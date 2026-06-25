@@ -206,11 +206,11 @@ body{background:#09090b;color:#fafafa;font-family:'Inter',sans-serif;min-height:
   .cond-item strong{color:#555}
   .quote-head-client{color:#666}
   .quote-head-client strong{color:#333}
-  .0d0d0f-bg{background:#f9f9f9}
+  .bg-dark{background:#f9f9f9}
   .qline{border-bottom:1px solid #f0f0f0 !important}
 }
 
-@media(max-width:480px){.row2{grid-template-columns:1fr}}
+@media(max-width:480px){.row2{grid-template-columns:1fr}.tier-row{grid-template-columns:1fr}.tier-c.mid{order:-1}.info-i::after{min-width:160px;left:auto;right:0;transform:none}}
 </style>
 </head>
 <body>
@@ -269,7 +269,7 @@ body{background:#09090b;color:#fafafa;font-family:'Inter',sans-serif;min-height:
       <div class="pills" id="p_tipo">
         <span class="pill" data-v="branding">Branding / Evento</span>
         <span class="pill" data-v="conteudo">Conteúdo de Produção</span>
-        <span class="pill" data-v="performance">Conteúdo de Performance</span>
+        <span class="pill" data-v="performance">Conteúdo de Performance</span><span class="pill" data-v="diaria">Cobertura / Diária</span>
       </div>
       <div class="hint" id="hint_tipo"></div>
     </div>
@@ -720,6 +720,17 @@ const STEP_LABELS = ['Identificação','Projeto','Logística','Equipe & Pré-pro
 let curStep = 1;
 
 function next(n) {
+  if(n===2){
+    const fn=document.getElementById('f_nome');
+    const ft=document.getElementById('f_tel');
+    const fe=document.getElementById('f_emp');
+    const fm=document.getElementById('f_email');
+    if(fn&&!fn.value.trim()){alert('Preencha: Nome completo');fn.focus();return;}
+    if(ft&&!ft.value.trim()){alert('Preencha: Telefone / WhatsApp');ft.focus();return;}
+    if(fe&&!fe.value.trim()){alert('Preencha: Empresa');fe.focus();return;}
+    if(fm&&!fm.value.trim()){alert('Preencha: E-mail');fm.focus();return;}
+    if(window.PILL_STATE&&PILL_STATE.p_tipo===null){alert('Selecione o tipo de serviço');return;}
+  }
   readAll();
   document.getElementById(curStep === 7 ? 'stepResult' : 's'+curStep).classList.remove('active');
   curStep = n;
@@ -977,7 +988,7 @@ function calc(){
   const cComb = D.km*D.cpkm;
   const cPed  = D.ped*D.vped;
   const cHosp = D.hosp*D.vhosp;
-  const autoRef = D.hjob>=5?Math.ceil(D.hjob/5):0;
+  const autoRef=D.hjob>=10?2:D.hjob>=5?1:0;
   const numRef = Math.max(D.ref,autoRef);
   const cRef  = numRef*D.vref;
   const cFree = D.frees*D.vfree*D.dfree;
@@ -1005,7 +1016,7 @@ function calc(){
   if(D.recorrente){
     mensalOriginal = bruto;
     mensalComDesc = bruto*(1-(D.desc_rec/100));
-    setupFee = mensalComDesc*(D.setup/100);
+    const setupBase=mensalComDesc*(D.setup/100);setupFee=aliq>0?setupBase/(1-aliq):setupBase;
     total = mensalComDesc; // monthly recurring value
   }
 
