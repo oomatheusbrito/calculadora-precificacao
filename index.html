@@ -1375,6 +1375,1469 @@ function doPrint(){
   const _calc=window.calc;
   if(_calc)window.calc=function(){const r=_calc();if(window.D&&D.diaria>0){const dc=D.diaria*(D.n_diarias||1);const aliq=(D.aliq||0)/100;r.cServico=dc;r.bruto=aliq>0?dc/(1-aliq):dc;r.total=r.bruto+r.cLogis+r.cFree+r.cDrone;}return r;};
 })();
+<\/script>
+</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),600);
+}
+
+// ── RESET ────────────────────────────────────────────────────────
+function resetar(){
+  // Reset form inputs
+  ['f_nome','f_tel','f_emp','f_email','f_ig','f_hjob','f_hcap','f_km','f_cpkm',
+   'f_ped','f_vped','f_hdesl','f_hosp','f_vhosp','f_ref','f_vref','f_hreu',
+   'f_hplan','f_vfree','f_dfree','f_vs','f_vm','f_vl','f_fi','f_lf','f_fa',
+   'f_prazo','f_pkg','f_vol_h','f_vol_rate',
+   'f_hora','f_aliq','f_drone','f_meses','f_desc_rec','f_setup'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const defaults={f_cpkm:'0.80',f_hjob:'4',f_hcap:'4',f_vhosp:'250',f_vref:'45',
+      f_hreu:'1',f_dfree:'1',f_prazo:'7',f_hora:'150',f_aliq:'6',f_drone:'300',
+      f_meses:'3',f_desc_rec:'20',f_setup:'10',f_vol_rate:'120'};
+    el.value = defaults[id]||'0';
+  });
+
+  // Reset logo + brand color
+  logoDataUrl = ''; brandColor = '';
+  const logoPrev = document.getElementById('logo_preview');
+  if(logoPrev){ logoPrev.style.display='none'; logoPrev.src=''; }
+  const logoInp = document.getElementById('f_logo');
+  if(logoInp) logoInp.value = '';
+  const corInp = document.getElementById('f_cor');
+  if(corInp) corInp.value = '';
+
+  // Reset pills
+  Object.assign(PILL_STATE,{p_tipo:null,p_fmt:'horizontal',p_trib:'mei',p_parc:1});
+  document.querySelectorAll('.pills .pill').forEach(p=>p.classList.remove('on'));
+  const fmtH=document.querySelector('#p_fmt [data-v="horizontal"]');
+  const tribM=document.querySelector('#p_trib [data-v="mei"]');
+  const parcA=document.querySelector('#p_parc [data-v="1"]');
+  if(fmtH)fmtH.classList.add('on');
+  if(tribM)tribM.classList.add('on');
+  if(parcA)parcA.classList.add('on');
+
+  // Reset steppers
+  Object.assign(STP_STATE,{cameras:1,captacoes:1,frees:0,revs:2});
+  ['cameras','captacoes','frees','revs'].forEach(k=>{
+    const el=document.getElementById('v_'+k);
+    if(el) el.textContent=STP_STATE[k];
+  });
+
+  // Reset toggles
+  Object.assign(TOG_STATE,{recorrente:false,drone:false,audio:false,pix:true});
+  ['recorrente','drone','audio'].forEach(k=>{
+    const el=document.getElementById('tog_'+k);
+    if(el) el.classList.remove('on');
+  });
+  document.getElementById('tog_pix').classList.add('on');
+  document.getElementById('rec_fields').style.display='none';
+  document.getElementById('drone_val_field').style.display='none';
+  // Reset drone wrap visibility
+  const dw=document.getElementById('drone_wrap');
+  if(dw) dw.style.display='block';
+  // Reset PIX section
+  const pixSec=document.getElementById('pix_section');
+  if(pixSec) pixSec.style.display='block';
+  document.getElementById('free_fields').style.display='none';
+  document.getElementById('hint_free').style.display='none';
+  document.getElementById('f_aliq_wrap').style.display='none';
+  document.getElementById('crmMsg').innerHTML='';
+  // Reset hint modal
+  const hOff=document.getElementById('hint_modal_off');
+  const hOn=document.getElementById('hint_modal_on');
+  if(hOff) hOff.style.display='inline';
+  if(hOn) hOn.style.display='none';
+  // Reset pkg section
+  const pkgGuided=document.getElementById('pkg_guided_questions');
+  const pkgBox=document.getElementById('pkg_sugest_box');
+  if(pkgGuided) pkgGuided.style.display='none';
+  if(pkgBox) pkgBox.style.display='none';
+  // Reset margin box
+  const mb=document.getElementById('marginBox');
+  if(mb) mb.style.display='none';
+
+  next(1);
+}
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Orçamento — CINESTUDIOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#09090b;color:#fafafa;font-family:'Inter',sans-serif;min-height:100vh;font-size:15px;line-height:1.55}
+
+/* ── LAYOUT ── */
+.app{max-width:600px;margin:0 auto;padding:28px 20px 100px}
+
+/* ── LOGO ── */
+.logo{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:40px;padding-top:8px}
+.logo-text{font-size:20px;font-weight:800;letter-spacing:8px;color:#c9a572;text-transform:uppercase;font-family:'Inter',sans-serif}
+
+/* ── PROGRESS ── */
+.prog-wrap{margin-bottom:36px}
+.prog-top{display:flex;justify-content:space-between;margin-bottom:9px}
+.prog-lbl{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#71717a}
+.prog-step{font-size:11px;color:#3f3f46}
+.prog-bar{height:2px;background:#1f1f23;border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:#c9a572;border-radius:99px;transition:width .4s ease}
+
+/* ── STEP ── */
+.step{display:none;animation:fi .2s ease}
+.step.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.slbl{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c9a572;margin-bottom:8px}
+.stitle{font-size:22px;font-weight:800;line-height:1.2;margin-bottom:5px}
+.sdesc{font-size:14px;color:#71717a;margin-bottom:28px;line-height:1.5}
+
+/* ── FORM ── */
+.field{margin-bottom:18px}
+.field label{display:block;font-size:12px;font-weight:600;color:#71717a;margin-bottom:6px;letter-spacing:.3px;text-transform:uppercase}
+.field input,.field select{width:100%;background:#0f0f11;border:1px solid #1f1f23;border-radius:10px;padding:13px 15px;font-size:15px;color:#fafafa;outline:none;transition:border-color .15s;font-family:inherit;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:#c9a572}
+.field input::placeholder{color:#3f3f46}
+.field select option{background:#0f0f11}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hint{font-size:12px;color:#52525b;margin-top:5px}
+.hint.warn{color:#f59e0b}
+.hint.ok{color:#4ade80}
+
+/* ── PILLS ── */
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.pill{padding:9px 15px;border:1px solid #1f1f23;border-radius:99px;font-size:13px;font-weight:500;color:#52525b;cursor:pointer;transition:all .15s;background:#0f0f11;user-select:none}
+.pill:hover{border-color:#2f2f35;color:#a1a1aa}
+.pill.on{border-color:#c9a572;background:rgba(201,165,114,.1);color:#c9a572;font-weight:600}
+
+/* ── TOGGLE ROW ── */
+.tog{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;background:#0f0f11;border:1px solid #1f1f23;border-radius:10px;margin-bottom:9px;cursor:pointer;transition:border-color .15s;user-select:none}
+.tog:hover{border-color:#2f2f35}
+.tog.on{border-color:rgba(201,165,114,.35);background:rgba(201,165,114,.04)}
+.tog-info{font-size:14px;font-weight:500}
+.tog-info small{display:block;font-size:12px;color:#52525b;font-weight:400;margin-top:2px}
+.sw{width:38px;height:21px;background:#1f1f23;border-radius:99px;position:relative;transition:background .2s;flex-shrink:0}
+.sw::after{content:'';width:15px;height:15px;background:#3f3f46;border-radius:50%;position:absolute;top:3px;left:3px;transition:all .2s}
+.tog.on .sw{background:rgba(201,165,114,.25)}
+.tog.on .sw::after{background:#c9a572;transform:translateX(17px)}
+
+/* ── STEPPER ── */
+.stp{display:flex;align-items:center;gap:12px;margin-top:4px}
+.stp-btn{width:34px;height:34px;border:1px solid #1f1f23;border-radius:8px;background:#0f0f11;color:#fafafa;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .15s;line-height:1;font-family:inherit}
+.stp-btn:hover{border-color:#c9a572;color:#c9a572}
+.stp-val{font-size:18px;font-weight:700;min-width:32px;text-align:center}
+.stp-lbl{font-size:13px;color:#52525b}
+
+/* ── DIVIDER ── */
+.div{margin:24px 0 18px;display:flex;align-items:center;gap:10px}
+.div-line{flex:1;height:1px;background:#1f1f23}
+.div-lbl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#2f2f35;white-space:nowrap}
+
+/* ── NAV BUTTONS ── */
+.nav{display:flex;gap:10px;margin-top:32px}
+.btn-back{flex-shrink:0;padding:13px 18px;border:1px solid #1f1f23;border-radius:99px;background:transparent;color:#52525b;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-back:hover{color:#a1a1aa;border-color:#2f2f35}
+.btn-next{flex:1;padding:14px;border:none;border-radius:99px;background:#c9a572;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-next:hover{background:#d4b48c}
+.btn-next:disabled{background:#1f1f23;color:#3f3f46;cursor:not-allowed}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:#111113;border:1px solid #1f1f23;border-radius:16px;padding:28px;width:100%;max-width:460px;animation:fi .2s ease}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:6px}
+.modal p{font-size:13px;color:#71717a;margin-bottom:20px;line-height:1.6}
+.modal pre{background:#09090b;border:1px solid #1f1f23;border-radius:8px;padding:12px;font-size:11px;color:#71717a;overflow-x:auto;margin-bottom:16px;white-space:pre-wrap;word-break:break-all}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.btn-modal-sec{flex:1;padding:12px;border:1px solid #1f1f23;border-radius:99px;background:transparent;color:#71717a;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-modal-sec:hover{color:#a1a1aa}
+.btn-modal-pri{flex:1;padding:12px;border:none;border-radius:99px;background:#c9a572;color:#000;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-modal-pri:hover{background:#d4b48c}
+
+/* ── RESULT PAGE ── */
+#stepResult{max-width:600px}
+
+.quote-wrap{background:#0f0f11;border:1px solid #1f1f23;border-radius:14px;overflow:hidden;margin-bottom:14px}
+.quote-head{padding:20px 22px 14px;border-bottom:1px solid #0d0d0f}
+.quote-head-logo{font-size:14px;font-weight:800;letter-spacing:5px;color:#c9a572;text-transform:uppercase;margin-bottom:12px}
+.quote-head-client{font-size:14px;color:#71717a}
+.quote-head-client strong{color:#fafafa}
+.quote-section{border-bottom:1px solid #0d0d0f}
+.quote-section-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#3f3f46;padding:13px 22px 10px}
+.qline{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 22px;gap:12px}
+.qline:not(:last-child){border-bottom:1px solid #0d0d0f}
+.qline-name{font-size:14px;color:#a1a1aa;line-height:1.4}
+.qline-name small{display:block;font-size:11px;color:#52525b;margin-top:1px}
+.qline-val{font-size:14px;font-weight:600;color:#fafafa;white-space:nowrap;text-align:right}
+.qline.hi .qline-name{color:#fafafa;font-weight:600}
+.qline.hi .qline-val{color:#c9a572;font-size:15px}
+.qtotal{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;background:#09090b}
+.qtotal-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#71717a}
+.qtotal-value{font-size:28px;font-weight:900;color:#c9a572}
+
+.pay-box{background:rgba(201,165,114,.06);border:1px solid rgba(201,165,114,.2);border-radius:12px;padding:18px 20px;margin-bottom:14px}
+.pay-box h4{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c9a572;margin-bottom:12px}
+.pay-row{display:flex;justify-content:space-between;padding:7px 0;font-size:14px;border-bottom:1px solid rgba(201,165,114,.08)}
+.pay-row:last-child{border:none}
+.pay-row span:first-child{color:#a1a1aa}
+.pay-row span:last-child{font-weight:700;color:#fafafa}
+.pay-row.accent span:last-child{color:#c9a572}
+
+.scope-box{background:#0f0f11;border:1px solid #1f1f23;border-radius:12px;padding:18px 20px;margin-bottom:14px}
+.scope-box h4{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#3f3f46;margin-bottom:12px}
+.scope-item{font-size:14px;color:#a1a1aa;padding:5px 0;border-bottom:1px solid #0d0d0f;line-height:1.4}
+.scope-item:last-child{border:none}
+.scope-item::before{content:'→ ';color:#c9a572;font-size:12px}
+
+.cond-box{background:#09090b;border:1px solid #1f1f23;border-radius:12px;padding:18px 20px;margin-bottom:20px}
+.cond-box h4{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#3f3f46;margin-bottom:12px}
+.cond-item{font-size:12px;color:#52525b;padding:5px 0;border-bottom:1px solid #111113;line-height:1.5}
+.cond-item:last-child{border:none}
+.cond-item strong{color:#71717a}
+
+.validity{text-align:center;font-size:12px;color:#3f3f46;margin-bottom:20px}
+
+/* ── RESULT ACTION BUTTONS ── */
+.btn-pdf{width:100%;padding:14px;border:none;border-radius:99px;background:#c9a572;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:9px;transition:background .15s}
+.btn-pdf:hover{background:#d4b48c}
+.btn-reset{width:100%;padding:13px;border:1px solid #1f1f23;border-radius:99px;background:transparent;color:#52525b;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-reset:hover{color:#a1a1aa;border-color:#2f2f35}
+.crm-ok{font-size:12px;color:#4ade80;text-align:center;margin-top:8px;font-weight:500}
+.crm-err{font-size:12px;color:#ef4444;text-align:center;margin-top:8px;font-weight:500}
+
+/* ── MONEY WRAP (R$ prefix) ── */
+.money-wrap{position:relative}
+.money-wrap::before{content:'R$';position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#52525b;font-size:14px;pointer-events:none;z-index:1}
+.money-wrap input{padding-left:40px!important}
+
+/* ── INFO TOOLTIP ── */
+.info-i{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#27272a;color:#71717a;font-size:9px;font-weight:800;cursor:help;margin-left:5px;vertical-align:middle;position:relative;flex-shrink:0}
+.info-i::after{content:attr(data-tip);display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#18181b;border:1px solid #27272a;border-radius:8px;padding:8px 12px;font-size:11px;color:#a1a1aa;white-space:normal;min-width:210px;max-width:260px;z-index:200;line-height:1.55;font-weight:400;pointer-events:none}
+.info-i:hover::after{display:block}
+
+/* ── COLLAPSIBLE ── */
+.collap-hd{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0 6px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#52525b;background:none;border:none;font-family:inherit;width:100%;text-align:left}
+.collap-hd:hover{color:#71717a}
+.collap-hd .arr{font-size:10px;transition:transform .2s;font-style:normal}
+.collap-hd.open .arr{transform:rotate(180deg)}
+.collap-body{display:none}
+.collap-body.open{display:block}
+
+/* ── 3 PRICE TIERS ── */
+.tier-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 14px}
+.tier-c{border:1px solid #1f1f23;border-radius:10px;padding:12px 10px;text-align:center}
+.tier-c.mid{border-color:rgba(201,165,114,.4);background:rgba(201,165,114,.06)}
+.tier-c-tag{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#52525b;margin-bottom:5px}
+.tier-c.mid .tier-c-tag{color:#c9a572}
+.tier-c-val{font-size:16px;font-weight:800;color:#71717a}
+.tier-c.mid .tier-c-val{color:#fafafa;font-size:18px}
+.tier-c-desc{font-size:10px;color:#3f3f46;margin-top:4px;line-height:1.35}
+.tier-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#52525b;margin-bottom:8px;text-align:center}
+
+/* ── LOGO UPLOAD ── */
+.field input[type=file]{padding:10px 15px;font-size:13px;color:#71717a;cursor:pointer}
+.logo-preview{width:80px;height:40px;object-fit:contain;border-radius:4px;margin-top:6px;display:none}
+
+/* ── PRINT ── */
+@media print{
+  body{background:#fff;color:#000;font-size:13px}
+  .logo,.prog-wrap,.nav,.btn-pdf,.btn-reset,.modal-bg,.no-print{display:none!important}
+  .app{padding:0;max-width:100%}
+  .step{display:none!important}
+  #stepResult{display:block!important}
+  .quote-wrap{border:1px solid #ccc;background:#fff}
+  .quote-head{border-bottom:1px solid #eee}
+  .quote-head-logo{color:#8a6d3b}
+  .quote-section-title{color:#999}
+  .qline-name{color:#555}
+  .qline-val,.qtotal-value{color:#333}
+  .qtotal{background:#f5f5f5}.qtotal-value{color:#8a6d3b;font-size:22px}
+  .pay-box{background:#fffbf0;border-color:#c9a572}
+  .pay-box h4{color:#8a6d3b}
+  .pay-row span:first-child{color:#666}
+  .pay-row span:last-child{color:#333}
+  .pay-row.accent span:last-child{color:#8a6d3b}
+  .scope-box{background:#fafafa;border-color:#eee}
+  .scope-box h4{color:#999}
+  .scope-item{color:#555;border-color:#eee}
+  .cond-box{background:#fafafa;border-color:#eee}
+  .cond-item{color:#888;border-color:#f0f0f0}
+  .cond-item strong{color:#555}
+  .quote-head-client{color:#666}
+  .quote-head-client strong{color:#333}
+  .bg-dark{background:#f9f9f9}
+  .qline{border-bottom:1px solid #f0f0f0 !important}
+}
+
+@media(max-width:480px){.row2{grid-template-columns:1fr}.tier-row{grid-template-columns:1fr}.tier-c.mid{order:-1}.info-i::after{min-width:160px;left:auto;right:0;transform:none}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LOGO -->
+  <div class="logo"><span class="logo-text">CINESTUDIOS</span></div>
+  <div style="text-align:center;margin-bottom:28px;margin-top:-24px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#3f3f46">Ferramenta profissional</div>
+    <div style="font-size:17px;font-weight:700;color:#a1a1aa;margin-top:3px">Calculadora de Precificação de Serviços</div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="prog-wrap" id="progWrap">
+    <div class="prog-top">
+      <span class="prog-lbl" id="progLbl">Identificação</span>
+      <span class="prog-step" id="progStep">Etapa 1 de 6</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- ── STEP 1: LEAD ─────────────────────────────────────────── -->
+  <div class="step active" id="s1">
+    <div class="slbl">Etapa 1 de 6</div>
+    <div class="stitle">Dados do cliente</div>
+    <div class="sdesc">Preencha para gerar o orçamento. Os dados ficam registrados para acompanhamento.</div>
+
+    <div class="row2">
+      <div class="field"><label>Nome completo *</label><input id="f_nome" type="text" placeholder="João Silva"></div>
+      <div class="field"><label>Telefone / WhatsApp *</label><input id="f_tel" type="tel" placeholder="(11) 99999-9999"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Empresa *</label><input id="f_emp" type="text" placeholder="Nome da empresa"></div>
+      <div class="field"><label>E-mail *</label><input id="f_email" type="email" placeholder="contato@empresa.com"></div>
+    </div>
+    <div class="field"><label>Instagram (opcional)</label><input id="f_ig" type="text" placeholder="@perfil"></div>
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Personalização do PDF</div><div class="div-line"></div></div>
+    <div class="row2">
+      <div class="field">
+        <label>Logo do cliente (PNG/JPG) <span class="info-i" data-tip="Aparece no cabeçalho do PDF enviado ao cliente. Opcional.">?</span></label>
+        <input id="f_logo" type="file" accept="image/*" onchange="loadLogo(this)">
+        <img id="logo_preview" class="logo-preview" alt="preview">
+      </div>
+      <div class="field">
+        <label>Cor da marca (hex) <span class="info-i" data-tip="Ex: #FF5500. Substitui o dourado CINESTUDIOS pelo tom da marca no PDF. Deixe em branco para usar o padrão.">?</span></label>
+        <input id="f_cor" type="text" placeholder="#c9a572" maxlength="7" oninput="previewCor(this)">
+        <div class="hint">Cor principal da marca do cliente</div>
+      </div>
+    </div>
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Tipo de serviço</div><div class="div-line"></div></div>
+
+    <div class="field">
+      <label>Selecione o pilar</label>
+      <div class="pills" id="p_tipo">
+        <span class="pill" data-v="branding">Branding / Evento</span>
+        <span class="pill" data-v="conteudo">Conteúdo de Produção</span>
+        <span class="pill" data-v="performance">Conteúdo de Performance</span><span class="pill" data-v="diaria">Cobertura / Diária</span>
+      </div>
+      <div class="hint" id="hint_tipo"></div>
+    </div>
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Modalidade de contratação</div><div class="div-line"></div></div>
+
+    <div class="tog" id="tog_recorrente" onclick="togItem('recorrente')">
+      <div class="tog-info">Serviço recorrente — assinatura mensal<small>Estratégia + captação + edição por pacote. Contrato mínimo de 3 meses.</small></div>
+      <div class="sw"></div>
+    </div>
+    <div id="hint_modal" style="font-size:12px;color:#52525b;margin-top:4px;line-height:1.5">
+      <span id="hint_modal_off">Projeto único: precificado por entregáveis e horas efetivas. Pagamento: 50% para agendar + saldo na entrega.</span>
+      <span id="hint_modal_on" style="display:none">Recorrente: cliente assina um pacote mensal — estratégia, captação e edição incluídos. Cobra por resultado, não por câmera ou hora de gravação.</span>
+    </div>
+
+    <div class="nav">
+      <button class="btn-next" id="btn_s1" onclick="next(2)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: PROJETO ───────────────────────────────────────── -->
+  <div class="step" id="s2">
+    <div class="slbl">Etapa 2 de 6</div>
+    <div class="stitle" id="s2_title">Detalhes do projeto</div>
+    <div class="sdesc" id="s2_desc">Configure a estrutura técnica do projeto.</div>
+
+    <div id="rec_fields" style="display:none">
+      <div style="font-size:12px;color:#52525b;background:rgba(201,165,114,.04);border:1px solid rgba(201,165,114,.12);border-radius:8px;padding:10px 12px;margin-bottom:16px;line-height:1.5">
+        <strong style="color:#a1a1aa">Serviço recorrente:</strong> o cliente assina um pacote mensal — estratégia, captação e entrega. Câmeras, horas de gravação e equipamentos são <strong style="color:#a1a1aa">custo interno</strong>, não aparecem no orçamento do cliente.
+      </div>
+      <div class="row2">
+        <div class="field"><label>Meses mínimos de contrato</label><input id="f_meses" type="number" min="3" value="3" placeholder="3"><div class="hint">Mínimo recomendado: 3 meses</div></div>
+        <div class="field"><label>Desconto por fidelidade (%)</label><input id="f_desc_rec" type="number" min="0" max="40" value="20" placeholder="20"><div class="hint">Desconto sobre o valor do pacote</div></div>
+      </div>
+      <div class="field"><label>Taxa de setup — onboarding (% do mensal)</label><input id="f_setup" type="number" min="0" max="100" value="10" placeholder="10"><div class="hint">Cobrado uma vez no fechamento. Cobre briefing, identidade de marca, planejamento estratégico de conteúdo.</div></div>
+    </div>
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Captação</div><div class="div-line"></div></div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Câmeras</label>
+        <div class="stp"><button class="stp-btn" onclick="stp('cameras',-1)">−</button><span class="stp-val" id="v_cameras">1</span><button class="stp-btn" onclick="stp('cameras',1)">+</button><span class="stp-lbl">câmera(s)</span></div>
+      </div>
+      <div class="field">
+        <label>Captações / viagens</label>
+        <div class="stp"><button class="stp-btn" onclick="stp('captacoes',-1)">−</button><span class="stp-val" id="v_captacoes">1</span><button class="stp-btn" onclick="stp('captacoes',1)">+</button><span class="stp-lbl">vez(es)</span></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Duração do job no local <span class="info-i" data-tip="Tempo total que a equipe ficará no local. Acima de 5h: alimentação obrigatória por lei.">?</span></label>
+        <select id="f_hjob">
+          <option value="0">—</option>
+          <option value="0.5">30 min</option>
+          <option value="1">1h</option>
+          <option value="1.5">1h30</option>
+          <option value="2">2h</option>
+          <option value="2.5">2h30</option>
+          <option value="3">3h</option>
+          <option value="3.5">3h30</option>
+          <option value="4" selected>4h</option>
+          <option value="5">5h</option>
+          <option value="6">6h</option>
+          <option value="7">7h</option>
+          <option value="8">8h (dia cheio)</option>
+          <option value="10">10h</option>
+          <option value="12">12h</option>
+        </select>
+        <div class="hint warn" id="hint_food" style="display:none">Acima de 5h: incluir alimentação.</div>
+      </div>
+      <div class="field">
+        <label>Horas de captação cobradas <span class="info-i" data-tip="Horas efetivas de câmera ligada que serão cobradas. Pode ser diferente do tempo no local.">?</span></label>
+        <select id="f_hcap">
+          <option value="0">—</option>
+          <option value="0.5">30 min</option>
+          <option value="1">1h</option>
+          <option value="1.5">1h30</option>
+          <option value="2">2h</option>
+          <option value="2.5">2h30</option>
+          <option value="3">3h</option>
+          <option value="3.5">3h30</option>
+          <option value="4" selected>4h</option>
+          <option value="5">5h</option>
+          <option value="6">6h</option>
+          <option value="7">7h</option>
+          <option value="8">8h (dia cheio)</option>
+          <option value="10">10h</option>
+          <option value="12">12h</option>
+        </select>
+        <div class="hint">Horas efetivas de gravação</div>
+      </div>
+    </div>
+
+    <!-- Drone: only for branding/events and performance (not recurring content) -->
+    <div id="drone_wrap">
+      <div class="tog" id="tog_drone" onclick="togItem('drone')">
+        <div class="tog-info">Drone incluído<small>Custo de operação cobrado por captação — equipamento do cliente ou locação</small></div>
+        <div class="sw"></div>
+      </div>
+      <div class="field" id="drone_val_field" style="display:none">
+        <label>Valor diária do drone</label>
+        <div class="money-wrap"><input id="f_drone" type="number" min="0" value="300" placeholder="300"></div>
+      </div>
+    </div>
+
+    <div id="diaria_wrap" style="display:none">
+      <div class="div"><div class="div-line"></div><div class="div-lbl">Cobertura / Diária</div><div class="div-line"></div></div>
+      <div class="row2">
+        <div class="field">
+          <label>Valor da diária (R$)<span class="info-i">?<span>Valor cobrado por dia de trabalho no local.</span></span></label>
+          <div class="money-wrap"><input id="f_diaria" type="number" min="0" value="0" placeholder="ex: 800"></div>
+        </div>
+        <div class="field">
+          <label>Número de diárias</label>
+          <input id="f_n_diarias" type="number" min="1" value="1" placeholder="1">
+        </div>
+      </div>
+    </div>
+    <div class="tog" id="tog_audio" onclick="togItem('audio')">
+      <div class="tog-info">Haverá captação de áudio (falas/entrevistas)<small>Informativo — saber se é necessário mic dedicado ou lavalier. Não altera o preço diretamente.</small></div>
+      <div class="sw"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-back" onclick="next(1)">← Voltar</button>
+      <button class="btn-next" onclick="next(3)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: LOGÍSTICA ─────────────────────────────────────── -->
+  <div class="step" id="s3">
+    <div class="slbl">Etapa 3 de 6</div>
+    <div class="stitle">Logística</div>
+    <div class="sdesc">Deslocamento, hospedagem e alimentação entram no orçamento.</div>
+
+    <div class="row2">
+      <div class="field"><label>Km total (ida + volta)</label><input id="f_km" type="number" min="0" value="0" placeholder="0"></div>
+      <div class="field"><label>Custo por km <span class="info-i" data-tip="Padrão recomendado: R$0,80/km cobrindo depreciação + combustível.">?</span></label><div class="money-wrap"><input id="f_cpkm" type="number" min="0" step=".10" value="0.80" placeholder="0.80"></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Pedágios (qtd)</label><input id="f_ped" type="number" min="0" value="0" placeholder="0"></div>
+      <div class="field"><label>Valor por pedágio</label><div class="money-wrap"><input id="f_vped" type="number" min="0" value="0" placeholder="0"></div></div>
+    </div>
+    <div class="field">
+      <label>Horas de deslocamento cobradas <span class="info-i" data-tip="Tempo de viagem até o cliente que você cobra. Soma ao tempo total do projeto.">?</span></label>
+      <select id="f_hdesl">
+        <option value="0" selected>Não cobro deslocamento</option>
+        <option value="0.5">30 min</option>
+        <option value="1">1h</option>
+        <option value="1.5">1h30</option>
+        <option value="2">2h</option>
+        <option value="2.5">2h30</option>
+        <option value="3">3h</option>
+        <option value="4">4h</option>
+        <option value="5">5h</option>
+        <option value="6">6h</option>
+      </select>
+      <div class="hint">Cobradas no valor/hora da empresa</div>
+    </div>
+
+    <button type="button" class="collap-hd" id="hd_hosp" onclick="toggleSection('hosp')">
+      Hospedagem <i class="arr">▼</i>
+    </button>
+    <div class="collap-body" id="body_hosp">
+      <div class="row2">
+        <div class="field"><label>Noites</label><input id="f_hosp" type="number" min="0" value="0" placeholder="0"></div>
+        <div class="field"><label>Valor por diária</label><div class="money-wrap"><input id="f_vhosp" type="number" min="0" value="250" placeholder="250"></div></div>
+      </div>
+    </div>
+
+    <button type="button" class="collap-hd" id="hd_alim" onclick="toggleSection('alim')">
+      Alimentação <i class="arr">▼</i>
+    </button>
+    <div class="collap-body" id="body_alim">
+      <div class="row2">
+        <div class="field"><label>Refeições<span class="info-i" data-tip="Job acima de 5h: obrigatório incluir. O sistema adiciona automaticamente se o job durar +5h.">?</span></label><input id="f_ref" type="number" min="0" value="0" placeholder="0"></div>
+        <div class="field"><label>Valor por refeição</label><div class="money-wrap"><input id="f_vref" type="number" min="0" value="45" placeholder="45"></div></div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-back" onclick="next(2)">← Voltar</button>
+      <button class="btn-next" onclick="next(4)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: EQUIPE ────────────────────────────────────────── -->
+  <div class="step" id="s4">
+    <div class="slbl">Etapa 4 de 6</div>
+    <div class="stitle">Pré-produção & Equipe</div>
+    <div class="sdesc">Reuniões e freelancers fazem parte do custo do projeto.</div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Reunião / alinhamento <span class="info-i" data-tip="Cobrar sempre — mesmo 1h de reunião tem custo real para a empresa.">?</span></label>
+        <select id="f_hreu">
+          <option value="0">—</option>
+          <option value="0.5">30 min</option>
+          <option value="1" selected>1h</option>
+          <option value="1.5">1h30</option>
+          <option value="2">2h</option>
+          <option value="2.5">2h30</option>
+          <option value="3">3h</option>
+          <option value="4">4h</option>
+        </select>
+        <div class="hint">Pré-produção — cobrar sempre</div>
+      </div>
+      <div class="field">
+        <label>Planejamento / roteiro <span class="info-i" data-tip="Tempo gasto em briefing, roteiro, cronograma e pesquisa. Parte do serviço.">?</span></label>
+        <select id="f_hplan">
+          <option value="0" selected>—</option>
+          <option value="0.5">30 min</option>
+          <option value="1">1h</option>
+          <option value="1.5">1h30</option>
+          <option value="2">2h</option>
+          <option value="2.5">2h30</option>
+          <option value="3">3h</option>
+          <option value="4">4h</option>
+          <option value="5">5h</option>
+          <option value="6">6h</option>
+          <option value="8">8h (dia cheio)</option>
+        </select>
+        <div class="hint">Roteiro, cronograma, briefing</div>
+      </div>
+    </div>
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Freelancers</div><div class="div-line"></div></div>
+    <div class="field">
+      <label>Número de freelancers</label>
+      <div class="stp"><button class="stp-btn" onclick="stp('frees',-1)">−</button><span class="stp-val" id="v_frees">0</span><button class="stp-btn" onclick="stp('frees',1)">+</button><span class="stp-lbl">freelancer(s)</span></div>
+    </div>
+    <div class="row2" id="free_fields" style="display:none">
+      <div class="field"><label>Valor/dia por freelancer</label><div class="money-wrap"><input id="f_vfree" type="number" min="0" value="0" placeholder="0"></div></div>
+      <div class="field"><label>Dias de trabalho</label><input id="f_dfree" type="number" min="1" value="1" placeholder="1"></div>
+    </div>
+    <div class="hint" id="hint_free" style="display:none">Cláusula de não-concorrência inclusa no contrato.</div>
+
+    <div class="nav">
+      <button class="btn-back" onclick="next(3)">← Voltar</button>
+      <button class="btn-next" onclick="next(5)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 5: ENTREGÁVEIS ───────────────────────────────────── -->
+  <div class="step" id="s5">
+    <div class="slbl">Etapa 5 de 6</div>
+    <div class="stitle">O que será entregue</div>
+    <div class="sdesc">Cada formato define o tempo de pós-produção.</div>
+
+    <div class="row2">
+      <div class="field"><label>Reels / Shorts (até 60s)</label><input id="f_vs" type="number" min="0" value="0" placeholder="0" oninput="calcPkgSugest()"><div class="hint" id="hint_vs">3h de edição/unidade</div></div>
+      <div class="field"><label>Vídeos médios (1–5 min)</label><input id="f_vm" type="number" min="0" value="0" placeholder="0" oninput="calcPkgSugest()"><div class="hint" id="hint_vm">8h de edição/unidade</div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Vídeos longos (5–15 min)</label><input id="f_vl" type="number" min="0" value="0" placeholder="0" oninput="calcPkgSugest()"><div class="hint" id="hint_vl">15h de edição/unidade</div></div>
+      <div class="field"><label>Filmes / Weddings (15+ min)</label><input id="f_fi" type="number" min="0" value="0" placeholder="0" oninput="calcPkgSugest()"><div class="hint" id="hint_fi">25h de edição/unidade</div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Lotes de fotos (50 fotos/lote)</label><input id="f_lf" type="number" min="0" value="0" placeholder="0"><div class="hint">4h por lote</div></div>
+      <div class="field"><label>Fotos avulsas tratadas</label><input id="f_fa" type="number" min="0" value="0" placeholder="0"><div class="hint">5 min cada</div></div>
+    </div>
+
+    <!-- Seção de pacote — visível somente para recorrente -->
+    <div id="pkg_pricing_section" style="display:none">
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Precificação do pacote</div><div class="div-line"></div></div>
+
+    <!-- Seção de calculadora guiada — mostrada de forma diferente para recorrente vs. único -->
+    <div id="pkg_guided_section">
+      <div id="pkg_guided_questions" style="display:none">
+        <div style="font-size:13px;color:#a1a1aa;margin-bottom:14px;line-height:1.5">
+          Para precificar corretamente o pacote, responda internamente:
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Horas de edição dessa remessa</label>
+            <input id="f_vol_h" type="number" min="0" step="0.5" value="0" placeholder="ex: 8" oninput="calcPkgSugest()">
+            <div class="hint">Edição em volume: 8 vídeos curtos ≈ 8h (1h cada). Diferente de projeto único.</div>
+          </div>
+          <div class="field">
+            <label>Seu valor/hora em volume (R$)</label>
+            <input id="f_vol_rate" type="number" min="0" value="120" placeholder="120" oninput="calcPkgSugest()">
+            <div class="hint">Em volume é menor que projetos únicos. Seja realista com sua agenda.</div>
+          </div>
+        </div>
+        <div id="pkg_sugest_box" style="display:none;background:rgba(201,165,114,.05);border:1px solid rgba(201,165,114,.18);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c9a572;margin-bottom:8px">Valor sugerido para o pacote — interno</div>
+          <div id="pkg_sugest_txt" style="font-size:13px;color:#a1a1aa;line-height:1.6"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label id="pkg_field_label">Valor mensal do pacote <span class="info-i" data-tip="Defina o preço de mercado que o cliente vai pagar por mês. Use as faixas de referência acima. Deixe em 0 para calcular por hora × tempo.">?</span></label>
+        <div class="money-wrap"><input id="f_pkg" type="number" min="0" value="0" placeholder="0"></div>
+        <div class="hint" id="pkg_hint_main">Defina o valor mensal que o cliente paga. Use a calculadora acima para chegar no número certo.</div>
+        <div class="hint warn" id="hint_pkg" style="display:none"></div>
+      </div>
+    </div>
+    </div><!-- /pkg_pricing_section -->
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Formato & Prazo</div><div class="div-line"></div></div>
+
+    <div class="field">
+      <label>Formato principal de entrega</label>
+      <div class="pills" id="p_fmt">
+        <span class="pill on" data-v="horizontal">Horizontal</span>
+        <span class="pill" data-v="vertical">Vertical</span>
+        <span class="pill" data-v="ambos">Horizontal + Vertical</span>
+      </div>
+      <div class="hint">Informativo para o escopo. Cada vídeo é entregue no formato solicitado — Reels são verticais, filmes são horizontais. Não há multiplicador automático.</div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Revisões incluídas</label>
+        <div class="stp"><button class="stp-btn" onclick="stp('revs',-1)">−</button><span class="stp-val" id="v_revs">2</span><button class="stp-btn" onclick="stp('revs',1)">+</button></div>
+        <div class="hint">Erros de equipe não contam como revisão</div>
+      </div>
+      <div class="field"><label>Prazo de entrega (dias)</label><input id="f_prazo" type="number" min="1" value="7" placeholder="7"><div class="hint">Recorrente: 7 dias por remessa. Vídeos longos (15h+ edição): mínimo 30 dias.</div></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-back" onclick="next(4)">← Voltar</button>
+      <button class="btn-next" onclick="next(6)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 6: FINANCEIRO ────────────────────────────────────── -->
+  <div class="step" id="s6">
+    <div class="slbl">Etapa 6 de 6</div>
+    <div class="stitle">Financeiro</div>
+    <div class="sdesc">Defina sua hora e as condições de pagamento. O cliente verá apenas o total e as condições.</div>
+
+    <div class="field">
+      <label>Valor hora da empresa — interno <span class="info-i" data-tip="NÃO é o salário do editor. É o custo real da sua empresa: (custos fixos + variáveis + pró-labore + lucro desejado) ÷ horas produtivas/mês. Ex: empresa com R$8k de custo mensal e 80h produtivas = R$100/h mínimo. Não aparece no orçamento.">?</span></label>
+      <div class="money-wrap"><input id="f_hora" type="number" min="0" value="150" placeholder="150"></div>
+      <div class="hint">Custo real da empresa por hora — inclui todas as margens. Não aparece no orçamento.</div>
+    </div>
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Impostos</div><div class="div-line"></div></div>
+
+    <div class="field">
+      <label>Regime tributário</label>
+      <div class="pills" id="p_trib">
+        <span class="pill on" data-v="mei">MEI (sem impacto no orçamento)</span>
+        <span class="pill" data-v="simples">Simples Nacional — 6%</span>
+        <span class="pill" data-v="outro">Outro (%)</span>
+      </div>
+      <div class="hint" id="hint_trib">MEI paga DAS fixo mensal. Não altera o valor do orçamento.</div>
+    </div>
+    <div class="field" id="f_aliq_wrap" style="display:none">
+      <label>Alíquota (%)</label>
+      <input id="f_aliq" type="number" min="0" max="50" value="6" placeholder="6">
+    </div>
+
+    <div class="div"><div class="div-line"></div><div class="div-lbl">Pagamento</div><div class="div-line"></div></div>
+
+    <div class="field">
+      <label>Parcelamento máximo</label>
+      <div class="pills" id="p_parc">
+        <span class="pill on" data-v="1">À vista</span>
+        <span class="pill" data-v="2">2×</span>
+        <span class="pill" data-v="3">3×</span>
+        <span class="pill" data-v="6">6×</span>
+        <span class="pill" data-v="12">12×</span>
+      </div>
+      <div class="hint">Juros por conta do cliente. Parcelas via PicPay / cartão — você recebe na hora.</div>
+    </div>
+
+    <div id="pix_section">
+      <div class="tog on" id="tog_pix" onclick="togItem('pix')">
+        <div class="tog-info">Desconto PIX à vista — 5%<small>Para projeto único: cliente paga 100% de uma vez no PIX e recebe 5% de desconto.</small></div>
+        <div class="sw"></div>
+      </div>
+      <div class="hint" style="font-size:12px;color:#52525b;margin-top:4px">Exclusivo para projetos únicos. Recorrente tem taxa de setup no 1º mês — sem desconto PIX.</div>
+    </div>
+
+    <div class="nav">
+      <button class="btn-back" onclick="next(5)">← Voltar</button>
+      <button class="btn-next" onclick="gerar()">Gerar orçamento →</button>
+    </div>
+  </div>
+
+  <!-- ── RESULTADO ─────────────────────────────────────────────── -->
+  <div class="step" id="stepResult">
+    <div id="quoteOut"></div>
+    <div class="validity" id="validityTxt"></div>
+
+    <!-- Internal margin analysis — not printed -->
+    <div id="marginBox" style="display:none;background:rgba(201,165,114,.06);border:1px solid rgba(201,165,114,.2);border-radius:12px;padding:16px 18px;margin-bottom:14px" class="no-print">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c9a572;margin-bottom:10px">Análise interna — não aparece no orçamento</div>
+      <div id="marginContent"></div>
+    </div>
+
+    <button class="btn-pdf" onclick="imprimirOrcamento()">Imprimir / Salvar PDF</button>
+    <button class="btn-reset" onclick="resetar()">Novo orçamento</button>
+    <div id="crmMsg"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── MODAL: LEAD GATE ─────────────────────────────────────────── -->
+<div class="modal-bg" id="modalLeadGate">
+  <div class="modal">
+    <h3>Seus dados de contato</h3>
+    <p>Preencha uma vez para liberar o download do orçamento. Suas informações ficam registradas com segurança.</p>
+    <div class="row2">
+      <div class="field" style="margin-bottom:14px"><label>Seu nome *</label><input id="gate_nome" type="text" placeholder="Nome completo"></div>
+      <div class="field" style="margin-bottom:14px"><label>Empresa / Marca *</label><input id="gate_emp" type="text" placeholder="Nome da empresa ou @perfil"></div>
+    </div>
+    <div class="row2">
+      <div class="field" style="margin-bottom:14px"><label>E-mail *</label><input id="gate_email" type="email" placeholder="seu@email.com"></div>
+      <div class="field" style="margin-bottom:14px"><label>WhatsApp *</label><input id="gate_tel" type="tel" placeholder="(11) 99999-9999"></div>
+    </div>
+    <div id="gate_err" style="display:none;font-size:12px;color:#ef4444;margin-bottom:10px"></div>
+    <div class="modal-btns">
+      <button class="btn-modal-sec" onclick="closeModal('modalLeadGate')">Cancelar</button>
+      <button class="btn-modal-pri" onclick="submitLeadGate()">Liberar acesso →</button>
+    </div>
+    <p style="font-size:11px;color:#3f3f46;margin-top:14px;margin-bottom:0">Seus dados não serão compartilhados. Usados apenas para contato sobre ferramentas e recursos para profissionais de audiovisual.</p>
+  </div>
+</div>
+
+
+<script>
+// ── CONFIG — ALTERE APENAS AQUI ──────────────────────────────────
+// Cole o URL do seu Google Apps Script para captura de leads
+// (Leads = profissionais que usam a calculadora. Diferente da planilha de clientes deles.)
+const MATHEUS_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyd8u14J-2o74bW83har3OEsW6blyYq6uD_VZst08MQvRcJsDaq7YudYDcLUyi4oeER/exec';
+// ─────────────────────────────────────────────────────────────────
+
+// ── STATE ────────────────────────────────────────────────────────
+const D = {
+  nome:'',tel:'',emp:'',email:'',ig:'',
+  tipo:'',
+  recorrente:false,meses:3,desc_rec:20,setup:10,
+  cameras:1,captacoes:1,hjob:4,hcap:4,
+  drone:false,vdrone:300,audio:false,
+  km:0,cpkm:0.80,ped:0,vped:0,hdesl:0,
+  hosp:0,vhosp:250,ref:0,vref:45,
+  hreu:1,hplan:0,
+  frees:0,vfree:0,dfree:1,
+  vs:0,vm:0,vl:0,fi:0,lf:0,fa:0,
+  pkg:0,vol_h:0,vol_rate:120,
+  fmt:'horizontal',revs:2,prazo:7,
+  hora:150,
+  trib:'mei',aliq:6,
+  parc:1,pix:true,
+};
+
+const PILL_STATE = {p_tipo:null, p_fmt:'horizontal', p_trib:'mei', p_parc:1};
+const STP_STATE  = {cameras:1, captacoes:1, frees:0, revs:2};
+const TOG_STATE  = {recorrente:false, drone:false, audio:false, pix:true};
+
+// Init pix toggle as ON
+document.getElementById('tog_pix').classList.add('on');
+
+const STEP_LABELS = ['Identificação','Projeto','Logística','Equipe & Pré-prod','Entregáveis','Financeiro','Orçamento'];
+
+// ── NAVIGATION ───────────────────────────────────────────────────
+let curStep = 1;
+
+function next(n) {
+  if(n===2){
+    const fn=document.getElementById('f_nome');
+    const ft=document.getElementById('f_tel');
+    const fe=document.getElementById('f_emp');
+    const fm=document.getElementById('f_email');
+    if(fn&&!fn.value.trim()){alert('Preencha: Nome completo');fn.focus();return;}
+    if(ft&&!ft.value.trim()){alert('Preencha: Telefone / WhatsApp');ft.focus();return;}
+    if(fe&&!fe.value.trim()){alert('Preencha: Empresa');fe.focus();return;}
+    if(fm&&!fm.value.trim()){alert('Preencha: E-mail');fm.focus();return;}
+    if(window.PILL_STATE&&PILL_STATE.p_tipo===null){alert('Selecione o tipo de serviço');return;}
+  }
+  readAll();
+  document.getElementById(curStep === 7 ? 'stepResult' : 's'+curStep).classList.remove('active');
+  curStep = n;
+  const el = n === 7 ? document.getElementById('stepResult') : document.getElementById('s'+n);
+  el.classList.add('active');
+  const pct = Math.round(((n-1)/6)*100);
+  document.getElementById('progFill').style.width = pct+'%';
+  document.getElementById('progLbl').textContent = STEP_LABELS[n-1]||'Orçamento';
+  document.getElementById('progStep').textContent = n<=6 ? `Etapa ${n} de 6` : '';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function gerar() {
+  readAll();
+  buildQuote();
+  next(7);
+}
+
+// ── READ INPUTS ──────────────────────────────────────────────────
+function readAll() {
+  const map = {nome:'f_nome',tel:'f_tel',emp:'f_emp',email:'f_email',ig:'f_ig',
+    hjob:'f_hjob',hcap:'f_hcap',km:'f_km',cpkm:'f_cpkm',ped:'f_ped',vped:'f_vped',
+    hdesl:'f_hdesl',hosp:'f_hosp',vhosp:'f_vhosp',ref:'f_ref',vref:'f_vref',
+    hreu:'f_hreu',hplan:'f_hplan',vfree:'f_vfree',dfree:'f_dfree',
+    vs:'f_vs',vm:'f_vm',vl:'f_vl',fi:'f_fi',lf:'f_lf',fa:'f_fa',prazo:'f_prazo',
+    pkg:'f_pkg',vol_h:'f_vol_h',vol_rate:'f_vol_rate',
+    hora:'f_hora',aliq:'f_aliq',vdrone:'f_drone',
+    meses:'f_meses',desc_rec:'f_desc_rec',setup:'f_setup'};
+  Object.entries(map).forEach(([k,id])=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    D[k] = el.type==='number' ? (parseFloat(el.value)||0) : el.value;
+  });
+  D.tipo = PILL_STATE.p_tipo;
+  D.fmt  = PILL_STATE.p_fmt;
+  D.trib = PILL_STATE.p_trib;
+  D.parc = parseInt(PILL_STATE.p_parc)||1;
+  Object.assign(D, STP_STATE);
+  Object.assign(D, TOG_STATE);
+}
+
+// ── STEPPERS ────────────────────────────────────────────────────
+const STP_MIN = {cameras:1,captacoes:1,frees:0,revs:0};
+function stp(k,d){
+  STP_STATE[k]=Math.max(STP_MIN[k]||0,(STP_STATE[k]||0)+d);
+  document.getElementById('v_'+k).textContent=STP_STATE[k];
+  if(k==='frees'){
+    const show=STP_STATE[k]>0;
+    document.getElementById('free_fields').style.display=show?'grid':'none';
+    document.getElementById('hint_free').style.display=show?'block':'none';
+  }
+}
+
+// ── TOGGLES ──────────────────────────────────────────────────────
+function togItem(k){
+  TOG_STATE[k]=!TOG_STATE[k];
+  const el=document.getElementById('tog_'+k);
+  TOG_STATE[k]?el.classList.add('on'):el.classList.remove('on');
+  if(k==='recorrente'){
+    const on = TOG_STATE[k];
+    document.getElementById('rec_fields').style.display = on?'block':'none';
+    document.getElementById('hint_modal_off').style.display = on?'none':'inline';
+    document.getElementById('hint_modal_on').style.display = on?'inline':'none';
+    const t = document.getElementById('s2_title');
+    const d = document.getElementById('s2_desc');
+    if(t) t.textContent = on ? 'Estrutura do contrato recorrente' : 'Detalhes do projeto';
+    if(d) d.textContent = on ? 'Configure os termos da assinatura. Os campos de captação abaixo alimentam o cálculo interno de custo.' : 'Configure a estrutura técnica do projeto.';
+    updatePkgSection();
+    updateDroneVisibility();
+    // Hide PIX discount for recurring (setup fee replaces it)
+    const pixSec=document.getElementById('pix_section');
+    if(pixSec) pixSec.style.display=on?'none':'block';
+    if(on){ TOG_STATE.pix=false; document.getElementById('tog_pix').classList.remove('on'); }
+    else { TOG_STATE.pix=true; document.getElementById('tog_pix').classList.add('on'); }
+  }
+  if(k==='drone') document.getElementById('drone_val_field').style.display=TOG_STATE[k]?'block':'none';
+}
+
+// ── PILLS ────────────────────────────────────────────────────────
+document.querySelectorAll('.pills').forEach(container=>{
+  container.addEventListener('click',e=>{
+    const pill=e.target.closest('.pill');
+    if(!pill) return;
+    container.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+    pill.classList.add('on');
+    const gid=container.id;
+    PILL_STATE[gid]=pill.dataset.v;
+
+    if(gid==='p_tipo'){
+      const hints={branding:'Casamentos, festas, filmes institucionais — registro de momentos únicos.',
+        conteudo:'Social media, conteúdo recorrente — entrega por volume.',
+        performance:'Meta Ads, Google Ads, TikTok Ads — vídeo e foto para conversão.'};
+      document.getElementById('hint_tipo').textContent=hints[pill.dataset.v]||'';
+
+      // Update deliverable time hints based on service type
+      const isVol = pill.dataset.v==='conteudo'||pill.dataset.v==='performance';
+      const h = document.getElementById('hint_vs');
+      const hm = document.getElementById('hint_vm');
+      const hl = document.getElementById('hint_vl');
+      const hf = document.getElementById('hint_fi');
+      if(h){h.textContent = isVol ? '3h de edição/unidade — use "Valor do pacote" para precificar por volume' : '3h de edição/unidade';}
+      if(hm){hm.textContent = isVol ? '8h de edição/unidade — use "Valor do pacote" para precificar por volume' : '8h de edição/unidade';}
+      if(hl){hl.textContent = isVol ? '15h de edição/unidade — use "Valor do pacote" para precificar por volume' : '15h de edição/unidade';}
+      if(hf){hf.textContent = isVol ? '25h de edição/unidade' : '25h de edição/unidade';}
+
+      // Show/hint the package field prominence
+      const pkgEl = document.getElementById('hint_pkg');
+      if(pkgEl){
+        if(isVol){
+          pkgEl.textContent='Recomendado para este tipo: defina o valor de mercado do pacote acima.';
+          pkgEl.style.display='block';
+        } else {
+          pkgEl.style.display='none';
+        }
+      }
+      // Show/hide drone based on tipo — drone only relevant for branding/events
+      updateDroneVisibility();
+    }
+    if(gid==='p_trib'){
+      const show=pill.dataset.v==='outro';
+      document.getElementById('f_aliq_wrap').style.display=show?'block':'none';
+      const hints={mei:'MEI paga DAS fixo (~R$86/mês). Não altera o valor do orçamento.',
+        simples:'6% sobre a receita — incluso automaticamente no total.',outro:'Alíquota customizada inclusa no total.'};
+      document.getElementById('hint_trib').textContent=hints[pill.dataset.v]||'';
+    }
+  });
+});
+
+// ── DRONE VISIBILITY ─────────────────────────────────────────────
+function updateDroneVisibility(){
+  const tipo = PILL_STATE.p_tipo;
+  const isRec = TOG_STATE.recorrente;
+  const dw = document.getElementById('drone_wrap');
+  if(!dw) return;
+  // Drone is only relevant for branding/events and performance one-off
+  // Hide for recurring content production (price by deliverable, not equipment)
+  const hideDrone = isRec && (tipo==='conteudo'||!tipo);
+  dw.style.display = hideDrone ? 'none' : 'block';
+  if(hideDrone){
+    TOG_STATE.drone=false;
+    const dt=document.getElementById('tog_drone');
+    if(dt) dt.classList.remove('on');
+    document.getElementById('drone_val_field').style.display='none';
+  }
+}
+
+// ── PACKAGE GUIDED CALCULATOR ────────────────────────────────────
+function updatePkgSection(){
+  const isRec = TOG_STATE.recorrente;
+  const guided = document.getElementById('pkg_guided_questions');
+  const pkgPricing = document.getElementById('pkg_pricing_section');
+  const hint = document.getElementById('pkg_hint_main');
+  const hintPkg = document.getElementById('hint_pkg');
+  // Package section only shows for recurring
+  if(pkgPricing) pkgPricing.style.display = isRec ? 'block' : 'none';
+  if(guided) guided.style.display = isRec ? 'block' : 'none';
+  if(hint) hint.textContent = isRec
+    ? 'Defina o valor mensal que o cliente paga. Use as faixas de referência acima.'
+    : '';
+  if(hintPkg){ hintPkg.style.display='none'; }
+  // Reset pkg to 0 when switching to non-recurring
+  if(!isRec){ const el=document.getElementById('f_pkg'); if(el) el.value='0'; D.pkg=0; }
+  calcPkgSugest();
+}
+
+function calcPkgSugest(){
+  const vol_h = parseFloat(document.getElementById('f_vol_h')?.value)||0;
+  const vol_rate = parseFloat(document.getElementById('f_vol_rate')?.value)||120;
+  const box = document.getElementById('pkg_sugest_box');
+  const txt = document.getElementById('pkg_sugest_txt');
+  if(!box||!txt) return;
+  const isRec = TOG_STATE.recorrente;
+
+  // Deliverables from Step 5 fields
+  const vs = parseInt(document.getElementById('f_vs')?.value)||0;
+  const vm = parseInt(document.getElementById('f_vm')?.value)||0;
+  const vl = parseInt(document.getElementById('f_vl')?.value)||0;
+  const fi = parseInt(document.getElementById('f_fi')?.value)||0;
+  const totalEntregas = vs + vm + vl + fi;
+  const hcap = parseFloat(document.getElementById('f_hcap')?.value)||0;
+  const temCaptacao = hcap > 0;
+
+  // Show market reference even without hours — just need deliverables OR be in recurring mode
+  if(!isRec && vol_h<=0 && totalEntregas===0){ box.style.display='none'; return; }
+  if(isRec && totalEntregas===0 && vol_h<=0){ box.style.display='none'; return; }
+
+  // Internal cost (only when hours filled)
+  const editCost = vol_h * vol_rate;
+  const hora = parseFloat(document.getElementById('f_hora')?.value)||150;
+  const captCost = hcap * hora;
+  const totalInterno = editCost + captCost;
+
+  // Market reference tiers (BR 2025 — produtoras, freelancers pleno/sênior)
+  // Base: edição + estratégia de conteúdo. Captação no cliente sobe o valor.
+  let faixaMin, faixaMax, tipoDescricao;
+  if(totalEntregas <= 4){
+    faixaMin = 800; faixaMax = 1500;
+    tipoDescricao = 'micro (até 4 vídeos/mês)';
+  } else if(totalEntregas <= 10){
+    faixaMin = 1200; faixaMax = 2500;
+    tipoDescricao = 'básico (5–10 vídeos/mês)';
+  } else if(totalEntregas <= 20){
+    faixaMin = 2000; faixaMax = 4000;
+    tipoDescricao = 'intermediário (11–20 vídeos/mês)';
+  } else if(totalEntregas <= 35){
+    faixaMin = 3000; faixaMax = 6000;
+    tipoDescricao = 'avançado (21–35 vídeos/mês)';
+  } else {
+    faixaMin = 5000; faixaMax = 10000;
+    tipoDescricao = 'full production (35+ vídeos/mês)';
+  }
+  // Captação presencial no cliente adiciona valor
+  if(temCaptacao){ faixaMin = Math.round(faixaMin*1.2); faixaMax = Math.round(faixaMax*1.3); }
+
+  const fmt = (n) => 'R$ '+n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+
+  let html = '';
+  html += `<div style="margin-bottom:10px">`;
+  html += `<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#71717a;margin-bottom:6px">Custo interno estimado</div>`;
+  html += `<span style="color:#fafafa;font-weight:600">${fmt(editCost)}</span> edição (${vol_h}h × ${fmt(vol_rate)}/h)`;
+  if(captCost>0) html += ` + <span style="color:#fafafa;font-weight:600">${fmt(captCost)}</span> captação (${hcap}h × ${fmt(hora)}/h)`;
+  html += `<br><span style="color:#c9a572;font-weight:700">Total interno: ${fmt(totalInterno)}</span>`;
+  html += `</div>`;
+
+  html += `<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px">`;
+  html += `<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#71717a;margin-bottom:8px">Referência de mercado BR — pacote ${tipoDescricao}</div>`;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">`;
+  html += `<div style="text-align:center;background:rgba(201,165,114,.08);border-radius:6px;padding:8px 4px"><div style="font-size:10px;color:#71717a;margin-bottom:3px">entrada</div><div style="font-weight:700;color:#fafafa;font-size:14px">${fmt(faixaMin)}</div></div>`;
+  html += `<div style="text-align:center;background:rgba(201,165,114,.15);border-radius:6px;padding:8px 4px;border:1px solid rgba(201,165,114,.3)"><div style="font-size:10px;color:#c9a572;margin-bottom:3px">ideal</div><div style="font-weight:700;color:#c9a572;font-size:14px">${fmt(Math.round((faixaMin+faixaMax)/2/100)*100)}</div></div>`;
+  html += `<div style="text-align:center;background:rgba(201,165,114,.08);border-radius:6px;padding:8px 4px"><div style="font-size:10px;color:#71717a;margin-bottom:3px">teto</div><div style="font-weight:700;color:#fafafa;font-size:14px">${fmt(faixaMax)}</div></div>`;
+  html += `</div>`;
+  html += `<div style="font-size:11px;color:#52525b">Valores para profissional pleno/sênior com processo. Iniciante pode começar na faixa "entrada". Inclua estratégia de conteúdo para justificar valores maiores.</div>`;
+  html += `</div>`;
+  html += `<div style="margin-top:10px;font-size:12px;color:#a1a1aa">→ Use a faixa acima para definir o <strong style="color:#fafafa">Valor do pacote</strong> no campo abaixo.</div>`;
+
+  txt.innerHTML = html;
+  box.style.display = 'block';
+}
+
+// Job hours food hint (select uses 'change')
+document.getElementById('f_hjob').addEventListener('change',function(){
+  const h=parseFloat(this.value)||0;
+  document.getElementById('hint_food').style.display=h>=5?'block':'none';
+});
+
+// ── CALCULATION ──────────────────────────────────────────────────
+function calc(){
+  const editH = (D.vs*3+D.vm*8+D.vl*15+D.fi*25+D.lf*4+D.fa*(5/60));
+  const backupH = D.captacoes*0.5;
+  const preProdH = parseFloat(D.hreu||0)+parseFloat(D.hplan||0);
+  const prodH = parseFloat(D.hcap||0)+parseFloat(D.hdesl||0);
+  const posH = editH+backupH;
+  const totalH = preProdH+prodH+posH;
+
+  const cComb = D.km*D.cpkm;
+  const cPed  = D.ped*D.vped;
+  const cHosp = D.hosp*D.vhosp;
+  const autoRef=D.hjob>=10?2:D.hjob>=5?1:0;
+  const numRef = Math.max(D.ref,autoRef);
+  const cRef  = numRef*D.vref;
+  const cFree = D.frees*D.vfree*D.dfree;
+  const cDrone= D.drone?(D.captacoes*D.vdrone):0;
+  const cLogis= cComb+cPed+cHosp+cRef;
+
+  // Package override: when set, replaces hourly × time calculation
+  const usePkg = D.pkg > 0;
+  const custoInternoEstimado = totalH*D.hora; // always computed for margin display
+  const cServico = usePkg ? D.pkg : custoInternoEstimado;
+
+  let aliq=0;
+  if(D.trib==='simples') aliq=0.06;
+  else if(D.trib==='outro') aliq=(D.aliq||0)/100;
+
+  const base = cServico+cLogis+cFree+cDrone;
+  const bruto = aliq>0 ? base/(1-aliq) : base;
+  const imposto = bruto-base;
+
+  // Recurring: apply fidelity discount
+  let total = bruto;
+  let mensalOriginal = 0;
+  let mensalComDesc = 0;
+  let setupFee = 0;
+  if(D.recorrente){
+    mensalOriginal = bruto;
+    mensalComDesc = bruto*(1-(D.desc_rec/100));
+    const setupBase=mensalComDesc*(D.setup/100);setupFee=aliq>0?setupBase/(1-aliq):setupBase;
+    total = mensalComDesc; // monthly recurring value
+  }
+
+  const entrada = D.recorrente ? total : total*0.5;
+  const saldo   = total-entrada;
+  const pixTotal= total*(1-0.05);
+  const parcela = D.parc>1?saldo/D.parc:saldo;
+
+  return {editH,backupH,preProdH,prodH,posH,totalH,
+    cComb,cPed,cHosp,cRef,cFree,cDrone,cLogis,cServico,
+    custoInternoEstimado,usePkg,
+    base,imposto,bruto,total,
+    mensalOriginal,mensalComDesc,setupFee,
+    entrada,saldo,pixTotal,parcela,
+    numRef,autoRef,aliq};
+}
+
+// ── FORMAT ───────────────────────────────────────────────────────
+const R=(n)=>'R$ '+n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const H=(h)=>{const hrs=Math.floor(h),m=Math.round((h-hrs)*60);return m>0?`${hrs}h${m}min`:`${hrs}h`};
+
+// ── BUILD QUOTE ──────────────────────────────────────────────────
+function buildQuote(){
+  const c=calc();
+  const d=new Date().toLocaleDateString('pt-BR');
+  const tipoLabel={branding:'Branding',conteudo:'Conteúdo de Produção',performance:'Conteúdo de Performance'}[D.tipo]||'Audiovisual';
+  const fmtLabel={horizontal:'Horizontal',vertical:'Vertical',ambos:'Horizontal + Vertical'}[D.fmt]||'';
+
+  const scope=[];
+  if(D.vs>0) scope.push(`${D.vs} Reel${D.vs>1?'s':''} / Short${D.vs>1?'s':''} (até 60s)`);
+  if(D.vm>0) scope.push(`${D.vm} vídeo${D.vm>1?'s':''} médio${D.vm>1?'s':''} (1–5 min)`);
+  if(D.vl>0) scope.push(`${D.vl} vídeo${D.vl>1?'s':''} longo${D.vl>1?'s':''} (5–15 min)`);
+  if(D.fi>0) scope.push(`${D.fi} filme${D.fi>1?'s':''}${D.tipo==='branding'?' de casamento/evento':''} (15+ min)`);
+  if(D.lf>0) scope.push(`${D.lf} lote${D.lf>1?'s':''} de fotos (~50 fotos/lote)`);
+  if(D.fa>0) scope.push(`${D.fa} fotos avulsas tratadas`);
+  scope.push(`${D.captacoes} captaç${D.captacoes>1?'ões':'ão'} no cliente`);
+  if(D.drone) scope.push('Operação com drone');
+  if(D.audio) scope.push('Captação de áudio dedicado');
+  scope.push(`Formato de entrega: ${fmtLabel}`);
+  scope.push(`${D.revs} rodada${D.revs>1?'s':''} de revis${D.revs>1?'ões':'ão'} incluída${D.revs>1?'s':''}`);
+  scope.push(`Prazo: ${D.prazo} dias corridos após última captação`);
+  // Material bruto: sempre definido em contrato, não no orçamento
+
+  const scopeItems = scope.map(i=>`<div class="scope-item">${i}</div>`).join('');
+
+  let payHtml='';
+  if(D.recorrente){
+    const firstPay=c.total+c.setupFee;
+    const totalContrato=c.total*D.meses+c.setupFee;
+    payHtml=`
+      <div class="pay-row"><span>1º pagamento (mensalidade + setup de onboarding)</span><span>${R(firstPay)}</span></div>
+      <div class="pay-row"><span>Mensalidade recorrente a partir do 2º mês</span><span>${R(c.total)}</span></div>
+      <div class="pay-row"><span>Comprometimento mínimo</span><span>${D.meses} meses</span></div>
+      <div class="pay-row accent"><span>Total do contrato de ${D.meses} meses (setup + mensalidades)</span><span>${R(totalContrato)}</span></div>
+      ${D.pix?`<div class="pay-row accent"><span>PIX total ${D.meses} meses à vista (−5%)</span><span>${R(totalContrato*0.95)}</span></div>`:''}
+    `;
+  } else {
+    payHtml=`
+      <div class="pay-row"><span>Entrada obrigatória — 50% para agendar a data</span><span>${R(c.entrada)}</span></div>
+      <div class="pay-row"><span>Saldo na entrega</span><span>${R(c.saldo)}</span></div>
+      ${D.parc>1?`<div class="pay-row"><span>Parcelamento do saldo</span><span>${D.parc}× de ${R(c.parcela)} · juros por conta do cliente</span></div>`:''}
+      ${D.pix?`<div class="pay-row accent"><span>PIX à vista total (−5%)</span><span>${R(c.pixTotal)}</span></div>`:''}
+    `;
+  }
+
+  const conds=[
+    `<strong>${D.revs} rodada${D.revs>1?'s':''} de revis${D.revs>1?'ões':'ão'}</strong> incluída${D.revs>1?'s':''}. Alterações adicionais cobradas por hora. Erro de equipe não conta como revisão.`,
+    `<strong>Contrato obrigatório</strong> com assinatura digital antes de qualquer início.`,
+    D.recorrente?`<strong>Assinatura mínima:</strong> ${D.meses} meses. Renovação automática. Cancelamento com aviso de 30 dias após período mínimo.`:`<strong>Cancelamento:</strong> entrada (50%) não reembolsável após início da pré-produção.`,
+    D.frees>0?`<strong>Freelancers contratados</strong> estão sujeitos a cláusula de não-concorrência (24 meses).`:null,
+    D.drone?`<strong>Drone:</strong> em caso de chuva ou condição adversa, nova data sem custo adicional.`:null,
+    `<strong>Atraso no pagamento:</strong> juros de 1%/mês + multa de 2%, por conta do cliente.`,
+  ].filter(Boolean).map(i=>`<div class="cond-item">${i}</div>`).join('');
+
+  // 3 tiers for single project (shown above quote, not printed)
+  let tiersHtml = '';
+  if(!D.recorrente && c.total > 0){
+    const basic = c.total * 0.75;
+    const premium = c.total * 1.40;
+    tiersHtml = `
+      <div class="no-print" style="margin-bottom:14px">
+        <div class="tier-label">Faixas de proposta — projeto único</div>
+        <div class="tier-row">
+          <div class="tier-c">
+            <div class="tier-c-tag">Econômico</div>
+            <div class="tier-c-val">${R(basic)}</div>
+            <div class="tier-c-desc">Escopo enxuto,<br>sem extras</div>
+          </div>
+          <div class="tier-c mid">
+            <div class="tier-c-tag">★ Recomendado</div>
+            <div class="tier-c-val">${R(c.total)}</div>
+            <div class="tier-c-desc">Escopo completo<br>conforme orçamento</div>
+          </div>
+          <div class="tier-c">
+            <div class="tier-c-tag">Premium</div>
+            <div class="tier-c-val">${R(premium)}</div>
+            <div class="tier-c-desc">Express, direitos<br>ampliados, estratégia</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Brand color override for print
+  const cor = brandColor || '#c9a572';
+  const corPrint = brandColor || '#8a6d3b';
+  const logoHtml = logoDataUrl ? `<img src="${logoDataUrl}" style="height:36px;object-fit:contain;margin-bottom:6px;display:block">` : '';
+
+  document.getElementById('quoteOut').innerHTML= tiersHtml + `
+    <div class="quote-wrap">
+      <div class="quote-head">
+        ${logoHtml}
+        <div class="quote-head-logo" style="color:${cor}">${logoDataUrl?'':D.emp||'CINESTUDIOS'}</div>
+        <div class="quote-head-client"><strong>${D.nome||'Cliente'}</strong>${D.emp?` — ${D.emp}`:''}<br>${d} · ${tipoLabel}${D.recorrente?' · Recorrente':''}</div>
+      </div>
+      <div class="quote-section">
+        <div class="quote-section-title">Serviços</div>
+        <div class="qline hi">
+          <div class="qline-name">${D.recorrente?'Produção mensal recorrente':tipoLabel}${!c.usePkg?`<small>Pré-produção, captação e pós-produção — ${H(c.totalH)}</small>`:''}</div>
+          <div class="qline-val">${R(c.cServico+c.cFree+c.cDrone)}</div>
+        </div>
+        ${c.cLogis>0?`<div class="qline"><div class="qline-name">Logística<small>Deslocamento, pedágios${c.cHosp>0?', hospedagem':''}${c.cRef>0?', alimentação':''}</small></div><div class="qline-val">${R(c.cLogis)}</div></div>`:''}
+        ${c.aliq>0?`<div class="qline"><div class="qline-name">Impostos<small>${D.trib==='simples'?'Simples Nacional 6%':`Alíquota ${D.aliq}%`}</small></div><div class="qline-val">${R(c.imposto)}</div></div>`:''}
+      </div>
+      <div class="qtotal">
+        <span class="qtotal-label">${D.recorrente?'Valor mensal':'Total do projeto'}</span>
+        <span class="qtotal-value" style="color:${cor}">${R(c.total)}</span>
+      </div>
+    </div>
+
+    <div class="scope-box"><h4>Escopo incluído</h4>${scopeItems}</div>
+    <div class="pay-box"><h4>Condições de pagamento</h4>${payHtml}</div>
+    <div class="cond-box"><h4>Condições gerais</h4>${conds}</div>
+  `;
+
+  document.getElementById('validityTxt').textContent=`Proposta emitida em ${d} · Válida por 5 dias úteis`;
+
+  // Internal margin analysis
+  const marginBox = document.getElementById('marginBox');
+  const marginContent = document.getElementById('marginContent');
+  const rowStyle = 'display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid rgba(201,165,114,.08)';
+  const lblStyle = 'color:#71717a';
+  const valStyle = 'font-weight:600;color:#fafafa';
+
+  if(c.usePkg){
+    const margem = c.cServico > 0 ? ((c.cServico - c.custoInternoEstimado)/c.cServico)*100 : 0;
+    const margemColor = margem >= 40 ? '#4ade80' : margem >= 20 ? '#f59e0b' : '#ef4444';
+    marginContent.innerHTML=`
+      <div style="${rowStyle}"><span style="${lblStyle}">Custo interno estimado (${H(c.totalH)} × ${R(D.hora)}/h)</span><span style="${valStyle}">${R(c.custoInternoEstimado)}</span></div>
+      <div style="${rowStyle}"><span style="${lblStyle}">Valor do pacote definido</span><span style="${valStyle}">${R(c.cServico)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;padding:8px 0 2px"><span style="${lblStyle}">Margem sobre o serviço</span><span style="font-weight:800;color:${margemColor}">${margem.toFixed(1)}%${margem<20?' ⚠ abaixo do recomendado':margem>=40?' ✓':''}</span></div>
+    `;
+    marginBox.style.display='block';
+  } else {
+    // Show internal hours breakdown + market warning for recurring without pkg
+    const totalEntregas = D.vs+D.vm+D.vl+D.fi;
+    let recWarning = '';
+    if(D.recorrente && totalEntregas > 0){
+      // Market reference ranges
+      let fMin,fMax;
+      if(totalEntregas<=4){fMin=800;fMax=1500;}
+      else if(totalEntregas<=10){fMin=1200;fMax=2500;}
+      else if(totalEntregas<=20){fMin=2000;fMax=4000;}
+      else if(totalEntregas<=35){fMin=3000;fMax=6000;}
+      else{fMin=5000;fMax=10000;}
+      if(D.hcap>0){fMin=Math.round(fMin*1.2);fMax=Math.round(fMax*1.3);}
+      const fMid=Math.round((fMin+fMax)/2/100)*100;
+      recWarning=`
+        <div style="margin-top:12px;padding:12px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#ef4444;margin-bottom:6px">⚠ Atenção — preço calculado por hora pode estar fora da realidade do mercado</div>
+          <div style="font-size:12px;color:#a1a1aa;line-height:1.6">Para <strong style="color:#fafafa">${totalEntregas} entregável${totalEntregas>1?'s':''}/mês</strong>, o mercado BR pratica entre <strong style="color:#c9a572">${R(fMin)} e ${R(fMax)}</strong> (ideal: ${R(fMid)}).<br>Volte à etapa de entregáveis e defina o <strong style="color:#fafafa">Valor do pacote</strong> para usar o preço de mercado em vez do cálculo por hora.</div>
+        </div>`;
+    }
+    // Single project volume warning
+    let singleWarn = '';
+    if(!D.recorrente && c.editH > 40){
+      const semanas = Math.ceil(c.editH / 40);
+      singleWarn = `
+        <div style="margin-top:12px;padding:12px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#ef4444;margin-bottom:6px">⚠ Volume alto para projeto único</div>
+          <div style="font-size:12px;color:#a1a1aa;line-height:1.6">${H(c.editH)} de edição = ~${semanas} semana${semanas>1?'s':''} de trabalho exclusivo de edição. Este volume é mais comum em contratos recorrentes.<br>Para projeto único com esse escopo, o valor acima é o mínimo justo — considere negociar como assinatura mensal.</div>
+        </div>`;
+    }
+    marginContent.innerHTML=`
+      <div style="${rowStyle}"><span style="${lblStyle}">Horas totais calculadas</span><span style="${valStyle}">${H(c.totalH)} (pré-prod + captação + edição + backup)</span></div>
+      <div style="${rowStyle}"><span style="${lblStyle}">Custo interno estimado</span><span style="${valStyle}">${R(c.custoInternoEstimado)}</span></div>
+      ${recWarning}${singleWarn}
+    `;
+    marginBox.style.display='block';
+  }
+}
+
+// ── LOGO & BRAND COLOR ───────────────────────────────────────────
+let logoDataUrl = '';
+let brandColor = '';
+
+function loadLogo(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    logoDataUrl = e.target.result;
+    const prev = document.getElementById('logo_preview');
+    if(prev){ prev.src = logoDataUrl; prev.style.display = 'block'; }
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewCor(input){
+  const v = input.value.trim();
+  brandColor = /^#[0-9A-Fa-f]{6}$/.test(v) ? v : '';
+}
+
+// ── COLLAPSIBLE ───────────────────────────────────────────────────
+function toggleSection(id){
+  const hd = document.getElementById('hd_'+id);
+  const body = document.getElementById('body_'+id);
+  if(!body) return;
+  const isOpen = body.classList.toggle('open');
+  if(hd) hd.classList.toggle('open', isOpen);
+}
+
+// ── LEAD GATE ────────────────────────────────────────────────────
+let gateCallback = null;
+
+function isGatePassed(){
+  return !!localStorage.getItem('cs_gate_passed');
+}
+
+function checkGate(callback){
+  if(isGatePassed()){
+    callback();
+    return;
+  }
+  gateCallback = callback;
+  // Pre-fill if partial data in localStorage
+  const saved = JSON.parse(localStorage.getItem('cs_gate_data')||'{}');
+  if(saved.nome) document.getElementById('gate_nome').value=saved.nome;
+  if(saved.emp) document.getElementById('gate_emp').value=saved.emp;
+  if(saved.email) document.getElementById('gate_email').value=saved.email;
+  if(saved.tel) document.getElementById('gate_tel').value=saved.tel;
+  document.getElementById('gate_err').style.display='none';
+  document.getElementById('modalLeadGate').classList.add('open');
+}
+
+function submitLeadGate(){
+  const nome=document.getElementById('gate_nome').value.trim();
+  const emp=document.getElementById('gate_emp').value.trim();
+  const email=document.getElementById('gate_email').value.trim();
+  const tel=document.getElementById('gate_tel').value.trim();
+  const err=document.getElementById('gate_err');
+
+  if(!nome||!emp||!email||!tel){
+    err.textContent='Preencha todos os campos para liberar o acesso.';
+    err.style.display='block';
+    return;
+  }
+  if(!email.includes('@')){
+    err.textContent='E-mail inválido.';
+    err.style.display='block';
+    return;
+  }
+
+  const gateData={nome,emp,email,tel,data:new Date().toLocaleDateString('pt-BR')};
+  localStorage.setItem('cs_gate_data',JSON.stringify(gateData));
+  localStorage.setItem('cs_gate_passed','1');
+
+  // Send to Matheus's Sheets
+  if(MATHEUS_SHEETS_URL){
+    const params=new URLSearchParams({
+      tipo:'lead_calculadora',data:gateData.data,
+      nome,emp,email,tel
+    });
+    fetch(MATHEUS_SHEETS_URL+'?'+params.toString(),{method:'GET',mode:'no-cors'}).catch(()=>{});
+  }
+
+  closeModal('modalLeadGate');
+  if(gateCallback){ gateCallback(); gateCallback=null; }
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+// ── PRINT ────────────────────────────────────────────────────────
+function imprimirOrcamento(){
+  checkGate(doPrint);
+}
+function doPrint(){
+  const cor = brandColor || '#8a6d3b';
+  const conteudo = document.getElementById('quoteOut').innerHTML +
+    `<p style="text-align:center;font-size:11px;color:#999;margin-top:16px">Proposta emitida pela CINESTUDIOS · Válida por 5 dias úteis</p>`;
+  const win = window.open('','_blank','width=700,height=900');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#fff;color:#111;font-family:'Inter',sans-serif;padding:32px;font-size:13px;line-height:1.5}
+    .no-print,.tier-row{display:none!important}
+    .quote-wrap{border:1px solid #ddd;border-radius:10px;overflow:hidden;margin-bottom:14px}
+    .quote-head{padding:18px 20px 12px;border-bottom:1px solid #eee}
+    .quote-head-logo{font-size:13px;font-weight:800;letter-spacing:6px;color:${cor};text-transform:uppercase;margin-bottom:10px}
+    .quote-head-client{font-size:13px;color:#666}
+    .quote-head-client strong{color:#111}
+    .quote-section{border-bottom:1px solid #f0f0f0}
+    .quote-section-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#aaa;padding:10px 20px 8px}
+    .qline{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 20px;gap:12px;border-bottom:1px solid #f5f5f5}
+    .qline:last-child{border:none}
+    .qline-name{font-size:13px;color:#666}
+    .qline-name small{display:block;font-size:11px;color:#aaa;margin-top:1px}
+    .qline-val{font-size:13px;font-weight:600;color:#333;white-space:nowrap}
+    .qline.hi .qline-name{color:#111;font-weight:600}
+    .qline.hi .qline-val{color:${cor}}
+    .qtotal{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:#fafafa;border-top:1px solid #eee}
+    .qtotal-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#999}
+    .qtotal-value{font-size:22px;font-weight:900;color:${cor}}
+    .scope-box,.pay-box,.cond-box{border:1px solid #eee;border-radius:8px;padding:14px 16px;margin-bottom:10px}
+    .scope-box h4,.pay-box h4,.cond-box h4{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:10px}
+    .scope-item{font-size:13px;color:#555;padding:4px 0;border-bottom:1px solid #f5f5f5;line-height:1.4}
+    .scope-item:last-child{border:none}
+    .scope-item::before{content:'→ ';color:${cor};font-size:11px}
+    .pay-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #f5f5f5}
+    .pay-row:last-child{border:none}
+    .pay-row span:first-child{color:#666}
+    .pay-row span:last-child{font-weight:700;color:#333}
+    .pay-row.accent span:last-child{color:${cor}}
+    .cond-item{font-size:12px;color:#888;padding:4px 0;border-bottom:1px solid #f5f5f5;line-height:1.5}
+    .cond-item:last-child{border:none}
+    .cond-item strong{color:#555}
+    .pay-box{background:#fffbf4;border-color:#e8d5b0}
+    </style></head><body>${conteudo}<script>
+(function(){
+  // Show/hide diaria_wrap ao clicar no pilar
+  document.addEventListener('click',function(e){
+    const pill=e.target.closest('.pill[data-v]');
+    if(!pill)return;
+    if(['branding','conteudo','performance','diaria'].includes(pill.dataset.v)){
+      const dw=document.getElementById('diaria_wrap');
+      if(dw)dw.style.display=(pill.dataset.v==='diaria')?'block':'none';
+    }
+  },true);
+  // Patch readAll para capturar f_diaria e f_n_diarias
+  const _ra=window.readAll;
+  if(_ra)window.readAll=function(){_ra();if(window.D){const fd=document.getElementById('f_diaria');const fn=document.getElementById('f_n_diarias');D.diaria=fd?parseFloat(fd.value)||0:0;D.n_diarias=fn?parseFloat(fn.value)||1:1;}};
+  // Patch calc para usar custo diária quando definido
+  const _calc=window.calc;
+  if(_calc)window.calc=function(){const r=_calc();if(window.D&&D.diaria>0){const dc=D.diaria*(D.n_diarias||1);const aliq=(D.aliq||0)/100;r.cServico=dc;r.bruto=aliq>0?dc/(1-aliq):dc;r.total=r.bruto+r.cLogis+r.cFree+r.cDrone;}return r;};
+})();
 </script>
 </body></html>`);
   win.document.close();
