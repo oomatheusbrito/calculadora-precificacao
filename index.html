@@ -1117,7 +1117,7 @@ function buildQuote(){
     <div class="quote-wrap">
       <div class="quote-head">
         ${logoHtml}
-        <div class="quote-head-logo" style="color:${cor}">${logoDataUrl?'':D.emp||'CINESTUDIOS'}</div>
+        <div class="quote-head-logo" style="color:${cor}">${logoDataUrl?'':D.emp||''}</div>
         <div class="quote-head-client"><strong>${D.nome||'Cliente'}</strong>${D.emp?` — ${D.emp}`:''}<br>${d} · ${tipoLabel}${D.recorrente?' · Recorrente':''}</div>
       </div>
       <div class="quote-section">
@@ -1289,12 +1289,11 @@ function closeModal(id){document.getElementById(id).classList.remove('open')}
 
 // ── PRINT ────────────────────────────────────────────────────────
 function imprimirOrcamento(){
-  checkGate(doPrint);
+  doPrint();
 }
 function doPrint(){
   const cor = brandColor || '#8a6d3b';
-  const conteudo = document.getElementById('quoteOut').innerHTML +
-    `<p style="text-align:center;font-size:11px;color:#999;margin-top:16px">Proposta emitida pela CINESTUDIOS · Válida por 5 dias úteis</p>`;
+  const conteudo = document.getElementById('quoteOut').innerHTML;
   const win = window.open('','_blank','width=700,height=900');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
